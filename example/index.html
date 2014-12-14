@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hotel grid example</title>
+    <link rel="stylesheet" href="../src/hotel-grid.css"/>
+    <script src="../bower_components/momentjs/min/moment-with-locales.min.js"></script>
+    <script src="../bower_components/underscore/underscore-min.js"></script>
+    <script src="../src/hotel-grid.js"></script>
+</head>
+<body>
+    <div class="container" style="width: 1000px; margin: 50px auto">
+        <div class="hotel-grid"></div>
+    </div>
+
+    <script>
+        var hotelGrid = new HotelGridModel('hotel-grid');
+
+        // init hotel params
+        hotelGrid.addRoomGroup('first floor');
+        hotelGrid.addRoom('first floor', 'Standard room', ['#1', '#2', '#3']);
+        hotelGrid.addRoomGroup('second floor');
+        hotelGrid.addRoom('second floor', 'Standard room', ['#4', '#5']);
+        hotelGrid.addRoom('second floor', 'Double room', ['#6']);
+
+        // add grid records
+        hotelGrid.addRecord({
+            room: '#1',
+            from: '2014-10-02 12:00',
+            to: '2014-10-06 14:00',
+            guest: 'Murakami'
+        });
+
+        hotelGrid.renderData();
+    </script>
+</body>
+</html>

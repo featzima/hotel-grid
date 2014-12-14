@@ -1,0 +1,123 @@
+.hotel-grid {
+    position: relative;
+    height: 400px;
+    display: flex;
+    width: 100%;
+    border: 1px solid #e3e3e3;
+}
+.hotel-grid__legend {
+    padding-top: 60px;
+    border: 1px solid transparent;
+    border-right: 1px solid #e3e3e3;
+    background-color: #FFF;
+}
+.hotel-grid__content {
+    flex: 1;
+    position: relative;
+    overflow-x: hidden;
+}
+.hotel-grid .group-title {
+    height: 40px;
+    line-height: 39px;
+    font-size: 15px;
+    text-transform: uppercase;
+    padding-left: 20px;
+    padding-right: 20px;
+    border-bottom: 1px solid #e3e3e3;
+    box-sizing: border-box;
+    white-space: nowrap;
+}
+.hotel-grid .room-title {
+    height: 40px;
+    font-size: 14px;
+    line-height: 39px;
+    font-weight: bold;
+    padding-left: 35px;
+    padding-right: 20px;
+    border-bottom: 1px solid #e3e3e3;
+    box-sizing: border-box;
+    color: #0099CC;
+    white-space: nowrap;
+}
+.hotel-grid__canvas-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+.hotel-grid__records-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    overflow-x: scroll;
+}
+.hotel-grid__records {
+    height: 1px;
+    position: relative;
+    margin-top: 1px;
+}
+.room-state {
+    position: absolute;
+    top: 60px;
+    left: 90px;
+    height: 39px;
+    color: #7fd1ff;
+    width: 89px;
+    box-sizing: border-box;
+    text-align: center;
+    transition-property: top, left, color, box-shadow;
+    transition-duration: 0.4s;
+    font-size: 10px;
+    border-radius: 3px;
+    border: 1px solid #c0c0c0;
+    cursor: pointer;
+    overflow: hidden;
+    background-color: rgb(240, 240, 240);
+    text-align: left;
+}
+
+.room-state.booked {
+    border-color: #0099CC;
+    background-color: #50C0E9;
+}
+
+.room-state.booked:hover {
+    border-color: #0099CC;
+    background-color: #33B5E5;
+}
+
+.room-state.order-stopsale {
+    border-color: #CC0000;
+    background-color: #FF4444;
+}
+
+.room-state.order-stopsale:hover {
+    border-color: #CC0000;
+    background-color: #d83a3a;
+}
+
+.room-state.booked .room-state__guest {
+    color: #fff;
+}
+
+.room-state__guest {
+    font-size: 12px;
+    line-height: 39px;
+    display: inline;
+    color: #999;
+    padding-left: 4px;
+    white-space: nowrap;
+}
+
+.room-state:hover, .room-state.dragged {
+    color: rgba(50, 50, 200, 1);
+    /*cursor: pointer;*/
+    /*-webkit-box-shadow: 0px 0px 5px 1px rgba(50, 50, 200, 1);
+    box-shadow: 0px 0px 5px 1px rgba(50, 50, 200, 1);*/
+}
+
+.room-state.dragged {
+    /*-webkit-box-shadow: 0px 0px 10px 1px rgba(50, 50, 200, 1);
+    box-shadow: 0px 0px 10px 1px rgba(50, 50, 200, 1);*/
+}

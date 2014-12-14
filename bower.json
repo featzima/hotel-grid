@@ -1,0 +1,20 @@
+{
+  "name": "hotel-grid",
+  "version": "0.1.0",
+  "authors": [
+    "featZima <featzima@gmail.com>"
+  ],
+  "license": "MIT",
+  "homepage": "http://featzima.com/projects/hotel-grid",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "momentjs": "~2.8.4",
+    "underscore": "~1.7.0"
+  }
+}
