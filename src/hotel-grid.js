@@ -134,13 +134,46 @@ HotelGridModel.prototype.bindToUI = function() {
 HotelGridModel.prototype.adaptInnerSizes = function () {
     var canvas  = this.holder.canvasLayer,
         content = this.holder.content,
-        records = this.holder.records;
+        records = this.holder.records,
+        legend  = this.holder.legend;
 
     canvas.width = content.offsetWidth;
     canvas.height = content.offsetHeight;
 
     var contentWidth = (this.viewOptions.time_end.diff(this.viewOptions.time_start, 'days') + 1) * this.viewOptions.cellWidth;
     records.style.width = contentWidth + 'px';
+
+    legend.style.paddingBottom = this.getScrollbarWidth() + 'px';
+};
+
+HotelGridModel.prototype.getScrollbarWidth = function () {
+    // try get scroll bar width from holder
+    if (this.holder.scrollBarWidth) return this.holder.scrollBarWidth;
+
+    // in fail calculate scroll bar width
+    var outer = document.createElement("div");
+    outer.style.visibility = "hidden";
+    outer.style.width = "100px";
+    outer.style.msOverflowStyle = "scrollbar"; // needed for WinJS apps
+
+    document.body.appendChild(outer);
+
+    var widthNoScroll = outer.offsetWidth;
+    // force scrollbars
+    outer.style.overflow = "scroll";
+
+    // add inner div
+    var inner = document.createElement("div");
+    inner.style.width = "100%";
+    outer.appendChild(inner);
+
+    var widthWithScroll = inner.offsetWidth;
+
+    // remove divs
+    outer.parentNode.removeChild(outer);
+
+    this.holder.scrollBarWidth = widthNoScroll - widthWithScroll;
+    return this.holder.scrollBarWidth;
 };
 
 HotelGridModel.prototype.fillGrid = function(offsetX, offsetY) {
@@ -292,5 +325,6 @@ HotelGridModel.prototype.renderData = function() {
         }, this);
     }, this);
 
+    this.adaptInnerSizes();
     this.renderCanvas();
 };
