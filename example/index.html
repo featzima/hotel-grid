@@ -14,7 +14,12 @@
     </div>
 
     <script>
-        var hotelGrid = new HotelGridModel('hotel-grid');
+        // set English locale for dates
+        moment.locale('en');
+
+        var hotelGrid = new HotelGridModel({
+            container: '.hotel-grid'
+        });
 
         // init hotel params
         hotelGrid.addRoomGroup('first floor');
@@ -25,13 +30,15 @@
 
         // add grid records
         hotelGrid.addRecord({
+            id: 1300,
             room: '#1',
-            from: '2014-10-02 12:00',
-            to: '2014-10-06 14:00',
+            from: moment(),
+            to: moment().add(3, 'days'),
             guest: 'Murakami'
         });
 
         hotelGrid.renderData();
+        hotelGrid.scrollTo(moment());
     </script>
 </body>
 </html>

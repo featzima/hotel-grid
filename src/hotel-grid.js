@@ -14,16 +14,17 @@ var RoomModel = function(group, category, title) {
     this.title = title;
 };
 
-var RecordModel = function(room, from, to, guest) {
+var RecordModel = function(id, room, from, to, guest) {
+    this.id = id;
     this.room = room;
     this.from = moment(from);
     this.to = moment(to);
     this.guest = guest;
 };
 
-var HotelGridModel = function(containerClass) {
-    this.containerClass = containerClass;
-    this.container = document.getElementsByClassName(containerClass)[0];
+var HotelGridModel = function(params) {
+    this.containerSelector = params.container;
+    this.container = document.querySelector(this.containerSelector);
     this.groups = [];
     this.rooms = [];
     this.records = [];
@@ -33,8 +34,8 @@ var HotelGridModel = function(containerClass) {
         cellHeight: 40,
         monthHeaderHeight: 30,
         daysHeaderHeight: 30,
-        time_start: moment({year: 2013, month: 5, day: 1}),
-        time_end: moment({year: 2014, month: 11, day: 31})
+        time_start: params.from || moment().subtract(6, 'months'),
+        time_end: params.to || moment().add(6, 'months')
     };
     this.viewTemplates = {
         record: _.template('<div class="room-state__guest"><%= days %> : <%= guest %></div>')
@@ -82,12 +83,18 @@ HotelGridModel.prototype.getRecordsForRoom = function (room) {
 // Records api
 HotelGridModel.prototype.addRecord = function(record) {
     var room = this.getRoom(record.room);
-    this.records.push(new RecordModel(room, record.from, record.to, record.guest));
+    this.records.push(new RecordModel(record.id, room, record.from, record.to, record.guest));
 };
 
 // View api
 HotelGridModel.prototype.scrollTo = function(scrollDate) {
+    var content = this.holder.content,
+        recordsLayer = this.holder.recordsLayer;
 
+    var daysOffset = scrollDate.diff(this.viewOptions.time_start, 'days');
+    var daysInView = content.offsetWidth / this.viewOptions.cellWidth;
+
+    recordsLayer.scrollLeft = parseInt(daysOffset - daysInView / 2) * this.viewOptions.cellWidth;
 };
 
 HotelGridModel.prototype.renderBaseHtml = function() {
@@ -233,7 +240,7 @@ HotelGridModel.prototype.drawMonthsHeader = function(offsetX) {
         var offsetPixelsEnd = offsetDaysEnd * this.viewOptions.cellWidth;
         context.fillText(firstMonth.format("MMMM / YYYY"), offsetPixelsEnd - offsetX, this.viewOptions.cellHeight / 2);
 
-        firstMonth.add('M', 1);
+        firstMonth.add(1, 'M');
     }
 };
 
@@ -253,7 +260,7 @@ HotelGridModel.prototype.drawDaysHeader = function(offsetX) {
 
     for (i = firstDay; i <= lastDay ; i++) {
         var currentDay = moment(this.viewOptions.time_start);
-        currentDay.add('days', i);
+        currentDay.add(i, 'days');
         if (currentDay.day() >= 5) {
             context.fillStyle = "#0099CC";
             context.font = "bold 14px Arial";
@@ -312,6 +319,7 @@ HotelGridModel.prototype.renderData = function() {
                 var width = days * this.viewOptions.cellWidth - 1;
 
                 var recordNode = document.createElement('div');
+                recordNode.setAttribute('data-id', record.id);
                 recordNode.className = "room-state booked";
                 recordNode.innerHTML = this.viewTemplates.record({days: days, guest: record.guest});
                 recordNode.style.top = topPadding + 'px';
