@@ -4,17 +4,17 @@
  * Date: 15.11.2013
  */
 
-var GroupModel = function(title) {
+var GroupModel = function (title) {
     this.title = title;
 };
 
-var RoomModel = function(group, category, title) {
+var RoomModel = function (group, category, title) {
     this.group = group;
     this.category = category;
     this.title = title;
 };
 
-var RecordModel = function(id, room, from, to, guest) {
+var RecordModel = function (id, room, from, to, guest) {
     this.id = id;
     this.room = room;
     this.from = moment(from);
@@ -22,21 +22,22 @@ var RecordModel = function(id, room, from, to, guest) {
     this.guest = guest;
 };
 
-var HotelGridModel = function(params) {
+var HotelGridModel = function (params) {
     this.containerSelector = params.container;
     this.container = document.querySelector(this.containerSelector);
     this.groups = [];
     this.rooms = [];
     this.records = [];
-    this.viewOptions = {
-        grid: {},
+    this.viewOptions = _.extend({
         cellWidth: 45,
         cellHeight: 40,
         monthHeaderHeight: 30,
         daysHeaderHeight: 30,
-        time_start: params.from || moment().subtract(6, 'months'),
-        time_end: params.to || moment().add(6, 'months')
-    };
+        highlightDate: moment().startOf('day'),
+        highlightColor: '#FFF8E1',
+        timeStart: moment().startOf('day').subtract(6, 'months'),
+        timeEnd: moment().startOf('day').add(6, 'months')
+    }, params);
     this.viewTemplates = {
         record: _.template('<div class="room-state__guest"><%= days %> : <%= guest %></div>')
     };
@@ -49,7 +50,7 @@ HotelGridModel.prototype.addRoomGroup = function (title) {
 };
 
 HotelGridModel.prototype.getRoomGroup = function (title) {
-    return _.find(this.groups, function(group) {
+    return _.find(this.groups, function (group) {
         return group.title == title;
     }, this);
 };
@@ -57,47 +58,74 @@ HotelGridModel.prototype.getRoomGroup = function (title) {
 // Rooms api
 HotelGridModel.prototype.addRoom = function (groupTitle, category, titles) {
     var group = this.getRoomGroup(groupTitle);
-    _.each(titles, function(title) {
+    _.each(titles, function (title) {
         this.rooms.push(new RoomModel(group, category, title));
     }, this);
 };
 
 HotelGridModel.prototype.getRoom = function (title) {
-    return _.find(this.rooms, function(room) {
+    return _.find(this.rooms, function (room) {
         return room.title == title;
     }, this);
 };
 
 HotelGridModel.prototype.getRoomsForGroup = function (groupTitle) {
-    return _.filter(this.rooms, function(room) {
+    return _.filter(this.rooms, function (room) {
         return room.group.title == groupTitle;
     }, this);
 };
 
 HotelGridModel.prototype.getRecordsForRoom = function (room) {
-    return _.filter(this.records, function(record) {
+    return _.filter(this.records, function (record) {
         return record.room == room;
     }, this);
 };
 
 // Records api
-HotelGridModel.prototype.addRecord = function(record) {
+HotelGridModel.prototype.addRecord = function (record) {
     var room = this.getRoom(record.room);
     this.records.push(new RecordModel(record.id, room, record.from, record.to, record.guest));
 };
 
 // View api
-HotelGridModel.prototype.scrollTo = function(scrollDate) {
+HotelGridModel.prototype.scrollTo = function (scrollDate, offset) {
+    var content = this.holder.content,
+        recordsLayer = this.holder.recordsLayer,
+        records = this.holder.records;
+
+    var daysOffset = scrollDate.diff(this.viewOptions.timeStart, 'days');
+    var daysInView = content.offsetWidth / this.viewOptions.cellWidth;
+    offset = offset || 0;
+
+    var scrollValue = parseInt(daysOffset - daysInView * offset) * this.viewOptions.cellWidth;
+    var velocity = this.getVelocity();
+    if (velocity) {
+        velocity(records, "scroll", {container: recordsLayer, offset: scrollValue, axis: "x"}, 1000)
+    } else {
+        recordsLayer.scrollLeft = scrollValue;
+    }
+};
+
+HotelGridModel.prototype.currentDate = function (offset) {
     var content = this.holder.content,
         recordsLayer = this.holder.recordsLayer;
 
-    var daysOffset = scrollDate.diff(this.viewOptions.time_start, 'days');
-    var daysInView = content.offsetWidth / this.viewOptions.cellWidth;
-
-    recordsLayer.scrollLeft = parseInt(daysOffset - daysInView / 2) * this.viewOptions.cellWidth;
+    offset = offset || 0;
+    var daysOffset = (recordsLayer.scrollLeft + content.offsetWidth * offset) / this.viewOptions.cellWidth;
+    return this.viewOptions.timeStart.clone().add(daysOffset, 'days');
 };
 
-HotelGridModel.prototype.renderBaseHtml = function() {
+HotelGridModel.prototype.getVelocity = function () {
+    if (window.jQuery) {
+        return $.Velocity;
+    } else {
+        return typeof Velocity != 'undefined'
+            ? Velocity
+            : undefined;
+    }
+};
+
+HotelGridModel.prototype.renderBaseHtml = function () {
     var legend = document.createElement('div');
     legend.className = 'hotel-grid__legend';
     this.container.appendChild(legend);
@@ -131,7 +159,7 @@ HotelGridModel.prototype.renderBaseHtml = function() {
     this.bindToUI();
 };
 
-HotelGridModel.prototype.bindToUI = function() {
+HotelGridModel.prototype.bindToUI = function () {
     var that = this;
     this.holder.recordsLayer.addEventListener('scroll', function () {
         that.renderCanvas();
@@ -139,15 +167,15 @@ HotelGridModel.prototype.bindToUI = function() {
 };
 
 HotelGridModel.prototype.adaptInnerSizes = function () {
-    var canvas  = this.holder.canvasLayer,
+    var canvas = this.holder.canvasLayer,
         content = this.holder.content,
         records = this.holder.records,
-        legend  = this.holder.legend;
+        legend = this.holder.legend;
 
     canvas.width = content.offsetWidth;
     canvas.height = content.offsetHeight;
 
-    var contentWidth = (this.viewOptions.time_end.diff(this.viewOptions.time_start, 'days') + 1) * this.viewOptions.cellWidth;
+    var contentWidth = (this.viewOptions.timeEnd.diff(this.viewOptions.timeStart, 'days') + 1) * this.viewOptions.cellWidth;
     records.style.width = contentWidth + 'px';
 
     legend.style.paddingBottom = this.getScrollbarWidth() + 'px';
@@ -183,16 +211,39 @@ HotelGridModel.prototype.getScrollbarWidth = function () {
     return this.holder.scrollBarWidth;
 };
 
-HotelGridModel.prototype.fillGrid = function(offsetX, offsetY) {
+HotelGridModel.prototype.drawClear = function () {
     var context = this.holder.context,
-        canvas  = this.holder.canvasLayer;
+        canvas = this.holder.canvasLayer;
 
-    var offsetYY = this.viewOptions.daysHeaderHeight + this.viewOptions.monthHeaderHeight;
     context.clearRect(0, 0, canvas.width, canvas.height);
     context.fillStyle = '#fff';
-    context.fillRect(0,0,canvas.width,canvas.height);
+    context.fillRect(0, 0, canvas.width, canvas.height);
+};
 
+HotelGridModel.prototype.drawHighlight = function (offsetX) {
+    var context = this.holder.context,
+        canvas = this.holder.canvasLayer,
+        opts = this.viewOptions,
+        layer = this.holder.recordsLayer;
+
+    if (opts.highlightDate) {
+        var offsetYY = opts.daysHeaderHeight + opts.monthHeaderHeight;
+        var daysOffset = opts.highlightDate.diff(opts.timeStart, 'days');
+        var highlightOffset = daysOffset * this.viewOptions.cellWidth;
+
+        context.fillStyle = this.viewOptions.highlightColor;
+        context.rect(highlightOffset - offsetX, offsetYY, opts.cellWidth, layer.offsetHeight - offsetYY);
+        context.fill();
+    }
+};
+
+HotelGridModel.prototype.fillGrid = function (offsetX, offsetY) {
+    var context = this.holder.context,
+        canvas = this.holder.canvasLayer;
+
+    var offsetYY = this.viewOptions.daysHeaderHeight + this.viewOptions.monthHeaderHeight;
     context.strokeStyle = '#f0f0f0';
+
     // horizontal lines
     for (y = offsetY + 0.5 + offsetYY; y < canvas.height; y += this.viewOptions.cellHeight) {
         context.lineWidth = 1;
@@ -215,28 +266,28 @@ HotelGridModel.prototype.fillGrid = function(offsetX, offsetY) {
 
 };
 
-HotelGridModel.prototype.drawMonthsHeader = function(offsetX) {
+HotelGridModel.prototype.drawMonthsHeader = function (offsetX) {
     var context = this.holder.context,
-        canvas  = this.holder.canvasLayer;
+        canvas = this.holder.canvasLayer;
 
-    var firstMonth = this.viewOptions.time_start.clone().date(1);
+    var firstMonth = this.viewOptions.timeStart.clone().date(1);
 
     context.textAlign = 'center';
     context.textBaseline = 'middle';
     context.fillStyle = "#777";
     context.font = "normal 14px Arial";
 
-    while (!firstMonth.isAfter(this.viewOptions.time_end)) {
-        var offsetDays  = firstMonth.clone().date(15).diff(this.viewOptions.time_start, 'days');
+    while (!firstMonth.isAfter(this.viewOptions.timeEnd)) {
+        var offsetDays = firstMonth.clone().date(15).diff(this.viewOptions.timeStart, 'days');
         var offsetPixels = offsetDays * this.viewOptions.cellWidth;
 
         context.fillText(firstMonth.format("MMMM / YYYY"), offsetPixels - offsetX, this.viewOptions.cellHeight / 2);
 
-        var offsetDaysBegin  = firstMonth.clone().date(3).diff(this.viewOptions.time_start, 'days');
+        var offsetDaysBegin = firstMonth.clone().date(3).diff(this.viewOptions.timeStart, 'days');
         var offsetPixelsBegin = offsetDaysBegin * this.viewOptions.cellWidth;
         context.fillText(firstMonth.format("MMMM / YYYY"), offsetPixelsBegin - offsetX, this.viewOptions.cellHeight / 2);
 
-        var offsetDaysEnd  = firstMonth.clone().date(26).diff(this.viewOptions.time_start, 'days');
+        var offsetDaysEnd = firstMonth.clone().date(26).diff(this.viewOptions.timeStart, 'days');
         var offsetPixelsEnd = offsetDaysEnd * this.viewOptions.cellWidth;
         context.fillText(firstMonth.format("MMMM / YYYY"), offsetPixelsEnd - offsetX, this.viewOptions.cellHeight / 2);
 
@@ -244,12 +295,12 @@ HotelGridModel.prototype.drawMonthsHeader = function(offsetX) {
     }
 };
 
-HotelGridModel.prototype.drawDaysHeader = function(offsetX) {
+HotelGridModel.prototype.drawDaysHeader = function (offsetX) {
     var context = this.holder.context,
-        canvas  = this.holder.canvasLayer;
+        canvas = this.holder.canvasLayer;
 
     var offsetY = this.viewOptions.monthHeaderHeight;
-    var allDays = this.viewOptions.time_end.diff(this.viewOptions.time_start, 'days');
+    var allDays = this.viewOptions.timeEnd.diff(this.viewOptions.timeStart, 'days');
     var firstDay = parseInt(offsetX / this.viewOptions.cellWidth);
     var lastDay = firstDay + parseInt(canvas.width / this.viewOptions.cellWidth);
 
@@ -258,8 +309,8 @@ HotelGridModel.prototype.drawDaysHeader = function(offsetX) {
     context.textAlign = 'center';
     context.textBaseline = 'middle';
 
-    for (i = firstDay; i <= lastDay ; i++) {
-        var currentDay = moment(this.viewOptions.time_start);
+    for (i = firstDay; i <= lastDay; i++) {
+        var currentDay = moment(this.viewOptions.timeStart);
         currentDay.add(i, 'days');
         if (currentDay.day() >= 5) {
             context.fillStyle = "#0099CC";
@@ -274,18 +325,20 @@ HotelGridModel.prototype.drawDaysHeader = function(offsetX) {
     }
 };
 
-HotelGridModel.prototype.renderCanvas = function() {
+HotelGridModel.prototype.renderCanvas = function () {
     var records = this.holder.recordsLayer;
 
     var offsetX = this.viewOptions.cellWidth - records.scrollLeft % this.viewOptions.cellWidth;
     var offsetY = this.viewOptions.cellHeight - records.scrollTop % this.viewOptions.cellHeight;
 
+    this.drawClear();
+    this.drawHighlight(records.scrollLeft);
     this.fillGrid(offsetX, 0);
     this.drawMonthsHeader(records.scrollLeft);
     this.drawDaysHeader(records.scrollLeft);
 };
 
-HotelGridModel.prototype.renderData = function() {
+HotelGridModel.prototype.renderData = function () {
     // save link to HTML node for more convenience
     var legend = this.holder.legend;
 
@@ -297,7 +350,7 @@ HotelGridModel.prototype.renderData = function() {
     // calculate top padding for place legend on one level with records layer
     var topPadding = this.viewOptions.daysHeaderHeight + this.viewOptions.monthHeaderHeight;
 
-    _.each(this.groups, function(group, groupIndex) {
+    _.each(this.groups, function (group, groupIndex) {
         var groupNode = document.createElement('div');
         groupNode.className = 'group-title';
         groupNode.title = group.title;
@@ -306,15 +359,15 @@ HotelGridModel.prototype.renderData = function() {
 
         topPadding += this.viewOptions.cellHeight;
 
-        _.each(this.getRoomsForGroup(group.title), function(room, roomIndex) {
+        _.each(this.getRoomsForGroup(group.title), function (room, roomIndex) {
             var roomNode = document.createElement('div');
             roomNode.className = 'room-title';
             roomNode.title = room.category + ' ' + room.title;
             roomNode.innerText = room.category + ' ' + room.title;
             legend.appendChild(roomNode);
 
-            _.each(this.getRecordsForRoom(room), function(record) {
-                var left = moment(record.from).diff(this.viewOptions.time_start, 'days') * this.viewOptions.cellWidth + this.viewOptions.cellWidth / 2;
+            _.each(this.getRecordsForRoom(room), function (record) {
+                var left = moment(record.from).diff(this.viewOptions.timeStart, 'days') * this.viewOptions.cellWidth + this.viewOptions.cellWidth / 2;
                 var days = moment(record.to).diff(moment(record.from), 'days');
                 var width = days * this.viewOptions.cellWidth - 1;
 
