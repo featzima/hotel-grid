@@ -4,8 +4,7 @@
   "authors": [
     "featZima <featzima@gmail.com>"
   ],
-  "license": "MIT",
-  "homepage": "http://featzima.com/projects/hotel-grid",
+  "license": "MIT",  
   "ignore": [
     "**/.*",
     "node_modules",
